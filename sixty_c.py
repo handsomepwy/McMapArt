@@ -61,9 +61,9 @@ MC_Color_Dict = {
     (86, 86, 86): ("chiseled_deepslate", "deepslate", "cobbled_deepslate"),
     (186, 150, 126): ("raw_iron_block",)
 }
-# rcon = RCONClient("127.0.0.1", 25575)
-# rcon.login("chipmunk")
-# print(rcon.is_authenticated())
+rcon = RCONClient("127.0.0.1", 25575)
+rcon.login("chipmunk")
+print(rcon.is_authenticated())
 image = Image.open("test.JPG")
 rgb_image = image.convert("RGB")
 for x in range(256):
@@ -75,9 +75,9 @@ for x in range(256):
             diff = abs(color_set[0] - key[0]) + abs(color_set[1] - key[1]) + abs(color_set[2] - key[2])
             if diff < rel[1]:
                 rel = (key, diff)
-        # print(f"setblock {x} 0 {y} {MC_Color_Dict[rel[0]][0]}")
-        # print(rcon.command(f"setblock {x} 100 {y} {MC_Color_Dict[rel[0]][0]}"))
+        print(f"setblock {x} 0 {y} {MC_Color_Dict[rel[0]][0]}")
+        print(rcon.command(f"setblock {x} 100 {y} {MC_Color_Dict[rel[0]][0]}"))
         rgb_image.putpixel((x, y), rel[0])
         print(r, g, b)
 rgb_image.save("sixty_c_result.jpg")
-# rcon.stop()
+rcon.stop()
