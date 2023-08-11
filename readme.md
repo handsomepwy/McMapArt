@@ -28,7 +28,6 @@ If you need a performance example, maybe I can consider adding a testing paragra
 
 ## Contribution
 You can do the following to contribute to this project
-+ Write a GUI interface for main.py
 + Write a dictionary like the one in main.py, but mark the version of the game the dict is for
 + if you have some good idea, tell me 
 ### read before you do contribution
