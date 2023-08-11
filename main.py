@@ -2,7 +2,7 @@ import sys
 from PIL import Image
 from mctools import RCONClient
 import random
-# main python file of the project, which can "build" a 180-color Minecraft Pixel Art in a (java edition) server
+# main python file of the project, which can generate a 180-color Minecraft Pixel Art in a (java edition) server
 
 MC_Base_Color_Dict = {
     (127, 178, 56): ("grass_block", "slime_block"),
