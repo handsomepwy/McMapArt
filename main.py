@@ -111,6 +111,7 @@ def column_handle(column_data, row, start_pos):
         block_data = column_data[i]
         block_x = start_pos[0] + row
         block_z = start_pos[1] + i
+        command = ""
         if i == 0:
             command = f"setblock {block_x} 160 {block_z} {block_data[3]}"
             height_data.append(160)
@@ -130,7 +131,6 @@ def column_handle(column_data, row, start_pos):
                     block_y = 160
                 command = f"setblock {block_x} {block_y} {block_z} {block_data[3]}"
                 height_data.append(block_y)
-        print(command)
         print(rcon.command(command))
 
 
