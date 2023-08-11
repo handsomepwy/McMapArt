@@ -72,6 +72,7 @@ rcon = RCONClient(server_addr, int(server_port))
 server_pwd = input("rcon password:")
 rcon.login(server_pwd)
 if not rcon.is_authenticated():
+    print("not authenticated, now exit")
     sys.exit(1)
 
 
