@@ -102,10 +102,10 @@ def min_info(original_info, info135, info180, info220):
     return smallest_info
 
 
-rgb_image = Image.open("square_test.png").convert("RGB")
+rgb_image = Image.open("test.jpg").convert("RGB")
 
 
-def column_handle(column_data, row, start_pos):
+def handle_column(column_data, row, start_pos):
     height_data = []
     for i in range(len(column_data)):
         block_data = column_data[i]
@@ -134,9 +134,9 @@ def column_handle(column_data, row, start_pos):
         print(rcon.command(command))
 
 
-for x in range(128):
+for x in range(rgb_image.width):
     column = []
-    for y in range(128):
+    for y in range(rgb_image.height):
         r, g, b = rgb_image.getpixel((x, y))
         pixel_color = (r, g, b)
         block_info = ((-255, -255, -255), 180, 256 * 3, "nothing")
@@ -147,6 +147,6 @@ for x in range(128):
             block_info = min_info(block_info, info135, info180, info220)
         rgb_image.putpixel((x, y), block_info[0])
         column.append(block_info)
-    column_handle(column, x, (-64, -64))
-rgb_image.save("square_result.jpg")
+    handle_column(column, x, (-64, -64))
+rgb_image.save("test_result.jpg")
 rcon.stop()
