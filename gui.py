@@ -184,9 +184,11 @@ def start_file_frame():
 
     def gen_preview():
         file = asksaveasfilename()
+        print(file)
         if "." not in file:
             warn_label = ttk.Label(file_frame, text="save filename doesn't have a suffix")
             warn_label.pack()
+            return False
         global image_file
         for x in range(image_file.width):
             col = calculate_a_column(x, image_file.convert("RGB"))
