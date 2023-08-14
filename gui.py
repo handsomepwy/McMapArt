@@ -1,3 +1,9 @@
+import ttkbootstrap as ttk
+from tkinter.filedialog import askopenfilename
+from PIL import Image, ImageTk
+import random
+from mctools import RCONClient
+
 MC_Base_Color_Dict = {
     (127, 178, 56): ("grass_block", "slime_block"),
     (247, 233, 163): ("birch_planks", "birch_log"),
@@ -59,14 +65,12 @@ MC_Base_Color_Dict = {
     (86, 86, 86): ("chiseled_deepslate", "deepslate", "cobbled_deepslate"),
     (186, 150, 126): ("raw_iron_block",)
 }
-import ttkbootstrap as ttk
-from tkinter.filedialog import askopenfilename
-from PIL import Image, ImageTk
-import random
-from mctools import RCONClient
 
-# root = ttk.Window(themename="darkly")
-root = ttk.Window()
+root = ttk.Window(title="McMapArt generator v1.0", themename="morph")
+# change the path to your icon.ico path
+# note that my own exe is packed by pyinstaller
+# the icon of my exe and the GUI exe are both icon.ico
+root.iconbitmap(r"D:\McMapArt\icon.ico")
 file_loc = ttk.StringVar(root, "haven't selected any file yet")
 img = ""
 original_img = ""
@@ -153,11 +157,11 @@ def handle_column(column_data, row, start_pos, rcon):
                     block_y = 160
                 command = f"setblock {block_x} {block_y} {block_z} {block_data[3]}"
                 height_data.append(block_y)
-        rcon.command(command)
+        print(rcon.command(command))
 
 
 def start_file_frame():
-    file_frame = ttk.Labelframe(root, text="picture", width=100, height=200, style="primary")
+    file_frame = ttk.Labelframe(root, text="Picture", width=100, height=200, style="primary")
 
     def choose_pic():
         # open file and show selected file path (and name)
@@ -179,18 +183,18 @@ def start_file_frame():
                 image_file.putpixel((x, i), col[i][0])
         #  show preview
         img = ImageTk.PhotoImage(image_file)
-        after_image = ttk.Label(file_frame, image=img, text="preview image")
+        after_image = ttk.Label(file_frame, image=img)
         after_image.pack()
 
     file_label = ttk.Label(file_frame, textvariable=file_loc)
     file_label.pack()
     file_btn = ttk.Button(file_frame, text="choose a picture", command=choose_pic, style="primary")
     file_btn.pack()
-    file_frame.pack(side="left")
+    file_frame.pack(side="left", padx=10)
 
 
 def start_rcon_frame():
-    rcon_frame = ttk.Labelframe(root, text="rcon", width=75, height=150, style="primary")
+    rcon_frame = ttk.Labelframe(root, text="Rcon", width=75, height=150, style="primary")
     rcon_frame.pack(padx=10, pady=10)
     global rcon_data
 
@@ -216,10 +220,12 @@ def start_rcon_frame():
 
 
 def start_run_frame():
-    run_frame = ttk.Labelframe(root, text="run", style="primary")
-    run_frame.pack()
+    global img
+    run_frame = ttk.Labelframe(root, text="Run", style="primary")
+    run_frame.pack(pady=10)
 
     def run_lines():
+        global img
         rcon = RCONClient(rcon_data[0], rcon_data[1])
         rcon.login(rcon_data[2])
         print(start_x_entry.get())
@@ -228,12 +234,10 @@ def start_run_frame():
         print(run_line_end_entry.get())
         start_line = int(run_line_start_entry.get())
         end_line = int(run_line_end_entry.get())
-        run_gauge = ttk.Floodgauge(root, mask="processed lines:{}", maximum=end_line-start_line+1, length=100)
-        run_gauge.pack()
-        print("gauge: "+str(end_line-start_line+1))
-        for i in range(start_line, end_line):
-            run_gauge.step(1)
+        for i in range(start_line, end_line+1):
+            rcon.command(f"forceload add {int(start_x_entry.get())+i} {int(start_y_entry.get())} {int(start_x_entry.get())+i} {int(start_y_entry.get())+img.height()}")
             handle_column(columns_data[i], i, (int(start_x_entry.get()), int(start_y_entry.get())), rcon)
+            rcon.command(f"forceload remove {int(start_x_entry.get()) + i} {int(start_y_entry.get())} {int(start_x_entry.get()) + i} {int(start_y_entry.get()) + img.height()}")
 
     start_x_label = ttk.Label(run_frame, text="start_x_pos")
     start_x_label.pack()
@@ -258,4 +262,10 @@ def start_run_frame():
 start_file_frame()
 start_rcon_frame()
 start_run_frame()
+print("This is the McMapArt generator log window\nBecause of tech issues, we cannot show processing log in the "
+      "GUI\nSo when you are running a map art, please see this window instead of the GUI\nAlso, when you select a "
+      "file, the program will automatically process pixels, which normally takes some time, don't close the program "
+      "although OS may say that the program have no respones\nThank you for using the program\nProject Repo: "
+      "https://github.com/handsomepwy/McMapArt\nMy bilibili account: https://space.bilibili.com/513244188\nHope you "
+      "have fun!")
 root.mainloop()
