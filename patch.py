@@ -66,10 +66,13 @@ MC_Base_Color_Dict = {
     (186, 150, 126): ("raw_iron_block",)
 }
 
-server_addr = input("server addr:")
-server_port = input("server rcon port:")
+# server_addr = input("server addr:")
+# server_port = input("server rcon port:")
+server_addr = "127.0.0.1"
+server_port = "25575"
 rcon = RCONClient(server_addr, int(server_port))
-server_pwd = input("rcon password:")
+# server_pwd = input("rcon password:")
+server_pwd = "chipmunk"
 rcon.login(server_pwd)
 if not rcon.is_authenticated():
     print("not authenticated, now exit")
@@ -102,11 +105,12 @@ def min_info(original_info, info135, info180, info220):
     return smallest_info
 
 
-rgb_image = Image.open("test.jpg").convert("RGB")
+rgb_image = Image.open("pic.png").convert("RGB")
 
 
 def handle_column(column_data, row, start_pos):
     height_data = []
+    rcon.command(f"forceload add {start_pos[0] + row} {start_pos[1]} {start_pos[0]+row} {start_pos[1]+len(column_data)}")
     for i in range(len(column_data)):
         block_data = column_data[i]
         block_x = start_pos[0] + row
@@ -121,20 +125,25 @@ def handle_column(column_data, row, start_pos):
                 height_data.append(height_data[-1])
             elif block_data[1] == 180:
                 block_y = height_data[-1]-1
-                if height_data[-1]-1 > 160:
+                if block_y > 160:
                     block_y = 160
+                if block_y < -60:
+                    block_y = -60
                 command = f"setblock {block_x} {block_y} {block_z} {block_data[3]}"
                 height_data.append(block_y)
             elif block_data[1] == 255:
                 block_y = height_data[-1]+1
-                if height_data[-1]+1 < 160:
+                if block_y < 160:
                     block_y = 160
+                if block_y > 319:
+                    print(block_y)
+                    block_y = 319
                 command = f"setblock {block_x} {block_y} {block_z} {block_data[3]}"
                 height_data.append(block_y)
         print(rcon.command(command))
 
 
-for x in range(rgb_image.width):
+for x in range(192, rgb_image.width):
     column = []
     for y in range(rgb_image.height):
         r, g, b = rgb_image.getpixel((x, y))
@@ -147,6 +156,6 @@ for x in range(rgb_image.width):
             block_info = min_info(block_info, info135, info180, info220)
         rgb_image.putpixel((x, y), block_info[0])
         column.append(block_info)
-    handle_column(column, x, (-64, -64))
-rgb_image.save("test_result.jpg")
+    handle_column(column, x, (0, 0))
+# rgb_image.save("test_result.jpg")
 rcon.stop()
