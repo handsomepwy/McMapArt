@@ -1,5 +1,5 @@
 import ttkbootstrap as ttk
-from tkinter.filedialog import askopenfilename
+from tkinter.filedialog import askopenfilename, asksaveasfilename
 from PIL import Image, ImageTk
 import random
 from mctools import RCONClient
@@ -70,11 +70,11 @@ root = ttk.Window(title="McMapArt generator v1.0", themename="morph")
 # change the path to your icon.ico path
 # note that my own exe is packed by pyinstaller
 # the icon of my exe and the GUI exe are both icon.ico
-root.iconbitmap(r"D:\McMapArt\icon.ico")
-file_loc = ttk.StringVar(root, "haven't selected any file yet")
+root.iconbitmap("icon.ico")
+file_loc = ttk.StringVar(root, "")
 img = ""
 original_img = ""
-image_file = ""
+image_file = Image.open("icon.ico")
 columns_data = []
 rcon_data = ["127.0.0.1", 25575, "chipmunk"]
 
@@ -91,7 +91,7 @@ def compare_color(info, map_color_level, real_color, base_color):
                  int(base_color[2] * map_color_level / 255))
     diff = abs(map_color[0] - real_color[0]) + abs(map_color[1] - real_color[1]) + abs(map_color[2] - real_color[2])
     if diff == 0:
-        return (map_color, map_color_level, diff, random.choice(MC_Base_Color_Dict[base_color]))
+        return map_color, map_color_level, diff, random.choice(MC_Base_Color_Dict[base_color])
     if diff < info[2]:
         info = (map_color, map_color_level, diff, random.choice(MC_Base_Color_Dict[base_color]))
     return info
@@ -147,14 +147,19 @@ def handle_column(column_data, row, start_pos, rcon):
                 height_data.append(height_data[-1])
             elif block_data[1] == 180:
                 block_y = height_data[-1]-1
-                if height_data[-1]-1 > 160:
+                if block_y > 160:
                     block_y = 160
+                if block_y < -60:
+                    block_y = -60
                 command = f"setblock {block_x} {block_y} {block_z} {block_data[3]}"
                 height_data.append(block_y)
             elif block_data[1] == 255:
                 block_y = height_data[-1]+1
-                if height_data[-1]+1 < 160:
+                if block_y < 160:
                     block_y = 160
+                if block_y > 319:
+                    print(block_y)
+                    block_y = 319
                 command = f"setblock {block_x} {block_y} {block_z} {block_data[3]}"
                 height_data.append(block_y)
         print(rcon.command(command))
@@ -162,36 +167,37 @@ def handle_column(column_data, row, start_pos, rcon):
 
 def start_file_frame():
     file_frame = ttk.Labelframe(root, text="Picture", width=100, height=200, style="primary")
+    file_frame.pack(side="left", padx=10)
 
     def choose_pic():
-        # open file and show selected file path (and name)
         file = askopenfilename(filetypes=[("PNG", ".png .jpg"), ("JPG", ".jpg")])
         file_loc.set("file selected" + file)
-        # global variables, or images won't appear
         global image_file, img, original_img, columns_data
         image_file = Image.open(file)
         img = ImageTk.PhotoImage(image_file)
         original_img = ImageTk.PhotoImage(image_file.resize((512, 288)))
-        # show the original image
         image_label = ttk.Label(file_frame, image=original_img)
         image_label.pack()
-        # calculate the image pixels
+
+    def gen_preview():
+        file = asksaveasfilename()
         for x in range(image_file.width):
             col = calculate_a_column(x, image_file.convert("RGB"))
             columns_data.append(col)
             for i in range(len(col)):
                 image_file.putpixel((x, i), col[i][0])
-            print(f"processed x pos:{x}/{image_file.width}")
-        #  show preview
-        img = ImageTk.PhotoImage(image_file.resize((512, 288)))
-        after_image = ttk.Label(file_frame, image=img)
-        after_image.pack()
+            print(f"processed x pos:{x+1}/{image_file.width}")
+        image_file.save(file)
 
     file_label = ttk.Label(file_frame, textvariable=file_loc)
     file_label.pack()
-    file_btn = ttk.Button(file_frame, text="choose a picture", command=choose_pic, style="primary")
-    file_btn.pack()
-    file_frame.pack(side="left", padx=10)
+    select_btn = ttk.Button(file_frame, text="choose a picture", command=choose_pic, style="info", width=15)
+    select_btn.pack(pady=10)
+    process_label = ttk.Label(file_frame, text="please press the generate preview button before running!!",
+                              style="danger")
+    process_label.pack()
+    process_btn = ttk.Button(file_frame, text="generate preview", command=gen_preview, style="primary", width=15)
+    process_btn.pack()
 
 
 def start_rcon_frame():
