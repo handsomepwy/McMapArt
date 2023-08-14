@@ -66,7 +66,7 @@ MC_Base_Color_Dict = {
     (186, 150, 126): ("raw_iron_block",)
 }
 
-root = ttk.Window(title="McMapArt generator v1.0", themename="morph")
+root = ttk.Window(title="McMapArt generator v1.1", themename="morph")
 root.iconbitmap("icon.ico")
 file_loc = ttk.StringVar(root, "")
 image_file = Image.open("icon.ico")
@@ -187,6 +187,7 @@ def start_file_frame():
                 image_file.putpixel((x, i), col[i][0])
             print(f"processed x pos:{x+1}/{image_file.width}")
         image_file.save(file)
+        print("image processed and saved")
 
     file_label = ttk.Label(file_frame, textvariable=file_loc)
     file_label.pack()
