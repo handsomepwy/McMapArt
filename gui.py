@@ -176,7 +176,7 @@ def start_file_frame():
         i = 1
         if show_image.width > 1000 or show_image.height > 1000:
             while int(show_image.width/i) > 1000 or int(show_image.height/i)>1000:
-                i = i + 1
+                i += 1
         show_image = ImageTk.PhotoImage(show_image.resize((int(show_image.width/i), int(show_image.height/i))))
         image_label = ttk.Label(file_frame, image=show_image)
         image_label.pack()
