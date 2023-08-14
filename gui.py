@@ -171,7 +171,7 @@ def start_file_frame():
         global image_file, img, original_img, columns_data
         image_file = Image.open(file)
         img = ImageTk.PhotoImage(image_file)
-        original_img = ImageTk.PhotoImage(image_file)
+        original_img = ImageTk.PhotoImage(image_file.resize((512, 288)))
         # show the original image
         image_label = ttk.Label(file_frame, image=original_img)
         image_label.pack()
@@ -181,8 +181,9 @@ def start_file_frame():
             columns_data.append(col)
             for i in range(len(col)):
                 image_file.putpixel((x, i), col[i][0])
+            print(f"processed x pos:{x}/{image_file.width}")
         #  show preview
-        img = ImageTk.PhotoImage(image_file)
+        img = ImageTk.PhotoImage(image_file.resize((512, 288)))
         after_image = ttk.Label(file_frame, image=img)
         after_image.pack()
 
