@@ -67,16 +67,14 @@ MC_Base_Color_Dict = {
 }
 
 root = ttk.Window(title="McMapArt generator v1.0", themename="morph")
-# change the path to your icon.ico path
-# note that my own exe is packed by pyinstaller
-# the icon of my exe and the GUI exe are both icon.ico
 root.iconbitmap("icon.ico")
 file_loc = ttk.StringVar(root, "")
-img = ""
-original_img = ""
 image_file = Image.open("icon.ico")
+show_image = image_file
 columns_data = []
-rcon_data = ["127.0.0.1", 25575, "chipmunk"]
+rcon_host = ttk.Variable(root, "127.0.0.1", "host")
+rcon_port = ttk.Variable(root, 25575, "port")
+rcon_password = ttk.Variable(root, "chipmunk", "password")
 
 
 def compare_color(info, map_color_level, real_color, base_color):
@@ -172,15 +170,16 @@ def start_file_frame():
     def choose_pic():
         file = askopenfilename(filetypes=[("PNG", ".png .jpg"), ("JPG", ".jpg")])
         file_loc.set("file selected" + file)
-        global image_file, img, original_img, columns_data
+        global image_file, show_image
         image_file = Image.open(file)
-        img = ImageTk.PhotoImage(image_file)
-        original_img = ImageTk.PhotoImage(image_file.resize((512, 288)))
-        image_label = ttk.Label(file_frame, image=original_img)
+        show_image = Image.open(file)
+        show_image = ImageTk.PhotoImage(show_image.resize((512, 288)))
+        image_label = ttk.Label(file_frame, image=show_image)
         image_label.pack()
 
     def gen_preview():
         file = asksaveasfilename()
+        global image_file
         for x in range(image_file.width):
             col = calculate_a_column(x, image_file.convert("RGB"))
             columns_data.append(col)
@@ -203,48 +202,47 @@ def start_file_frame():
 def start_rcon_frame():
     rcon_frame = ttk.Labelframe(root, text="Rcon", width=75, height=150, style="primary")
     rcon_frame.pack(padx=10, pady=10)
-    global rcon_data
+    global rcon_host, rcon_port, rcon_password
 
     def refresh_rcon_data():
-        global rcon_data
-        rcon_data = [host_entry.get(), int(port_entry.get()), password_entry.get()]
-        print(rcon_data)
+        global rcon_host, rcon_port, rcon_password
+        rcon_host.set(host_entry.get())
+        rcon_port.set(int(port_entry.get()))
+        rcon_password.set(password_entry.get())
 
     host_label = ttk.Label(rcon_frame, text="host")
     host_label.pack()
-    host_entry = ttk.Entry(rcon_frame, style="success", width=20)
+    host_entry = ttk.Entry(rcon_frame, textvariable=rcon_host, style="success", width=20)
     host_entry.pack(padx=15)
     port_label = ttk.Label(rcon_frame, text="port")
     port_label.pack()
-    port_entry = ttk.Entry(rcon_frame, style="info")
+    port_entry = ttk.Entry(rcon_frame, textvariable=rcon_port, style="info")
     port_entry.pack()
     password_label = ttk.Label(rcon_frame, text="password")
     password_label.pack()
-    password_entry = ttk.Entry(rcon_frame, show="*", style="danger")
+    password_entry = ttk.Entry(rcon_frame, textvariable=rcon_password, show="*", style="danger")
     password_entry.pack()
     data_refresh_btn = ttk.Button(rcon_frame, text="refresh", command=refresh_rcon_data, style="success-link")
     data_refresh_btn.pack()
 
 
 def start_run_frame():
-    global img
+    global image_file, rcon_host, rcon_port, rcon_password
     run_frame = ttk.Labelframe(root, text="Run", style="primary")
     run_frame.pack(pady=10)
 
     def run_lines():
-        global img
-        rcon = RCONClient(rcon_data[0], rcon_data[1])
-        rcon.login(rcon_data[2])
-        print(start_x_entry.get())
-        print(start_y_entry.get())
-        print(run_line_start_entry.get())
-        print(run_line_end_entry.get())
+        global image_file, rcon_host, rcon_port, rcon_password
+        start_x_pos = int(start_x_entry.get())
+        start_y_pos = int(start_y_entry.get())
         start_line = int(run_line_start_entry.get())
         end_line = int(run_line_end_entry.get())
+        rcon = RCONClient(rcon_host.get(), rcon_port.get())
+        rcon.login(rcon_password.get())
         for i in range(start_line, end_line+1):
-            rcon.command(f"forceload add {int(start_x_entry.get())+i} {int(start_y_entry.get())} {int(start_x_entry.get())+i} {int(start_y_entry.get())+img.height()}")
-            handle_column(columns_data[i], i, (int(start_x_entry.get()), int(start_y_entry.get())), rcon)
-            rcon.command(f"forceload remove {int(start_x_entry.get()) + i} {int(start_y_entry.get())} {int(start_x_entry.get()) + i} {int(start_y_entry.get()) + img.height()}")
+            rcon.command(f"forceload add {start_x_pos+i} {start_y_pos} {start_x_pos+i} {start_y_pos+image_file.height}")
+            handle_column(columns_data[i], i, (start_x_pos, start_y_pos), rcon)
+            rcon.command(f"forceload remove {start_x_pos + i} {start_y_pos} {start_x_pos + i} {start_y_pos + image_file.height}")
 
     start_x_label = ttk.Label(run_frame, text="start_x_pos")
     start_x_label.pack()
