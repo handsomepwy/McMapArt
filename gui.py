@@ -65,8 +65,9 @@ MC_Base_Color_Dict = {
     (86, 86, 86): ("chiseled_deepslate", "deepslate", "cobbled_deepslate"),
     (186, 150, 126): ("raw_iron_block",)
 }
+all_rgb = {}
 
-root = ttk.Window(title="McMapArt generator v1.1", themename="morph")
+root = ttk.Window(title="McMapArt generator v1.2", themename="morph")
 root.iconbitmap("icon.ico")
 file_loc = ttk.StringVar(root, "")
 image_file = Image.open("icon.ico")
@@ -77,54 +78,26 @@ rcon_port = ttk.Variable(root, 25575, "port")
 rcon_password = ttk.Variable(root, "chipmunk", "password")
 
 
-def compare_color(info, map_color_level, real_color, base_color):
-    """
-    :param info: block info for the pixel
-    :param map_color_level: 135 or 180 or 220
-    :param real_color: the pixel color
-    :param base_color: the base color of a block, key of MC_Base_Color_Dict
-    :return: block info
-    """
-    map_color = (int(base_color[0] * map_color_level / 255), int(base_color[1] * map_color_level / 255),
-                 int(base_color[2] * map_color_level / 255))
-    diff = abs(map_color[0] - real_color[0]) + abs(map_color[1] - real_color[1]) + abs(map_color[2] - real_color[2])
-    if diff == 0:
-        return map_color, map_color_level, diff, random.choice(MC_Base_Color_Dict[base_color])
-    if diff < info[2]:
-        info = (map_color, map_color_level, diff, random.choice(MC_Base_Color_Dict[base_color]))
-    return info
-
-
-def min_info(original_info, info180, info220, info255):
-    smallest_info = original_info
-    if info180[2] == 0:
-        return info180
-    if info220[2] == 0:
-        return info220
-    if info255[2] == 0:
-        return info255
-    if smallest_info[2] > info180[2]:
-        smallest_info = info180
-    if smallest_info[2] > info220[2]:
-        smallest_info = info220
-    if smallest_info[2] > info255[2]:
-        smallest_info = info255
-    return smallest_info
-
-
 def calculate_a_column(x, rgb_image):
     column = []
     for y in range(rgb_image.height):
+        c = 0
         r, g, b = rgb_image.getpixel((x, y))
         pixel_color = (r, g, b)
         block_info = ((-255, -255, -255), 180, 256 * 3, "nothing")
-        for base in MC_Base_Color_Dict.keys():
-            info180 = compare_color(block_info, 180, pixel_color, base)
-            info220 = compare_color(block_info, 220, pixel_color, base)
-            info255 = compare_color(block_info, 255, pixel_color, base)
-            block_info = min_info(block_info, info180, info220, info255)
-            if 0 in block_info:
+        for key, value in all_rgb.items():
+            for i in range(len(value)):
+                map_color = value[i]
+                if map_color == pixel_color:
+                    block_info = (map_color, i, 0, key)
+                    break
+                diff = abs(map_color[0] - r) + abs(map_color[1] - g) + abs(map_color[2] - b)
+                if diff < block_info[2]:
+                    c = c + 1
+                    block_info = (map_color, i, diff, key)
+            if block_info[2] == 0:
                 break
+        block_info = (block_info[0], block_info[1], block_info[2], random.choice(MC_Base_Color_Dict[block_info[3]]))
         column.append(block_info)
     return column
 
@@ -140,10 +113,10 @@ def handle_column(column_data, row, start_pos, rcon):
             command = f"setblock {block_x} 160 {block_z} {block_data[3]}"
             height_data.append(160)
         else:
-            if block_data[1] == 220:
+            if block_data[1] == 1:
                 command = f"setblock {block_x} {height_data[-1]} {block_z} {block_data[3]}"
                 height_data.append(height_data[-1])
-            elif block_data[1] == 180:
+            elif block_data[1] == 0:
                 block_y = height_data[-1]-1
                 if block_y > 160:
                     block_y = 160
@@ -151,7 +124,7 @@ def handle_column(column_data, row, start_pos, rcon):
                     block_y = -60
                 command = f"setblock {block_x} {block_y} {block_z} {block_data[3]}"
                 height_data.append(block_y)
-            elif block_data[1] == 255:
+            elif block_data[1] == 1:
                 block_y = height_data[-1]+1
                 if block_y < 160:
                     block_y = 160
@@ -175,7 +148,7 @@ def start_file_frame():
         show_image = Image.open(file)
         i = 1
         if show_image.width > 1000 or show_image.height > 1000:
-            while int(show_image.width/i) > 1000 or int(show_image.height/i)>1000:
+            while int(show_image.width/i) > 1000 or int(show_image.height/i) > 1000:
                 i += 1
         print(i)
         show_image = ImageTk.PhotoImage(show_image.resize((int(show_image.width/i), int(show_image.height/i))))
@@ -253,7 +226,8 @@ def start_run_frame():
         for i in range(start_line, end_line+1):
             rcon.command(f"forceload add {start_x_pos+i} {start_y_pos} {start_x_pos+i} {start_y_pos+image_file.height}")
             handle_column(columns_data[i], i, (start_x_pos, start_y_pos), rcon)
-            rcon.command(f"forceload remove {start_x_pos + i} {start_y_pos} {start_x_pos + i} {start_y_pos + image_file.height}")
+            rcon.command(f"forceload remove {start_x_pos + i} {start_y_pos} {start_x_pos + i} "
+                         f"{start_y_pos + image_file.height}")
 
     start_x_label = ttk.Label(run_frame, text="start_x_pos")
     start_x_label.pack()
@@ -275,13 +249,21 @@ def start_run_frame():
     run_button.pack(pady=10)
 
 
+def preload_dict():
+    global all_rgb, MC_Base_Color_Dict
+    for key, value in MC_Base_Color_Dict.items():
+        all_rgb[key] = ((int(key[0]*180/255), int(key[1]*180/255), int(key[2]*180/255)),
+                        (int(key[0]*220/255), int(key[1]*220/255), int(key[2]*220/255)),
+                        key)
+
+
 start_file_frame()
 start_rcon_frame()
 start_run_frame()
+preload_dict()
 print("This is the McMapArt generator log window\nBecause of tech issues, we cannot show processing log in the "
-      "GUI\nSo when you are running a map art, please see this window instead of the GUI\nAlso, when you select a "
-      "file, the program will automatically process pixels, which normally takes some time, don't close the program "
-      "although OS may say that the program have no respones\nThank you for using the program\nProject Repo: "
+      "GUI\nSo when you are running a map art, please see this window instead of the GUI\n"
+      "OS may say that the program have no response, don't worry\nThank you for using the program\nProject Repo: "
       "https://github.com/handsomepwy/McMapArt\nMy bilibili account: https://space.bilibili.com/513244188\nHope you "
       "have fun!")
 root.mainloop()
