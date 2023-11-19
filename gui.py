@@ -93,7 +93,7 @@ def calculate_a_column(x, rgb_image):
                     break
                 diff = abs(map_color[0] - r) + abs(map_color[1] - g) + abs(map_color[2] - b)
                 if diff < block_info[2]:
-                    c = c + 1
+                    c += 1
                     block_info = (map_color, i, diff, key)
             if block_info[2] == 0:
                 break
