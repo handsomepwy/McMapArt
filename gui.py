@@ -3,6 +3,7 @@ from tkinter.filedialog import askopenfilename, asksaveasfilename
 from PIL import Image, ImageTk
 import random
 from mctools import RCONClient
+from tqdm import tqdm
 
 MC_Base_Color_Dict = {
     (127, 178, 56): ("grass_block", "slime_block"),
@@ -124,16 +125,17 @@ def handle_column(column_data, row, start_pos, rcon):
                     block_y = -60
                 command = f"setblock {block_x} {block_y} {block_z} {block_data[3]}"
                 height_data.append(block_y)
-            elif block_data[1] == 1:
+            elif block_data[1] == 2:
                 block_y = height_data[-1]+1
                 if block_y < 160:
                     block_y = 160
                 if block_y > 319:
-                    print(block_y)
                     block_y = 319
                 command = f"setblock {block_x} {block_y} {block_z} {block_data[3]}"
                 height_data.append(block_y)
-        print(rcon.command(command))
+        result = rcon.command(command)
+        if "Could not" in result or "Unknown" in result:
+            print(f"executing command '{command}' error: {result}")
 
 
 def start_file_frame():
@@ -142,6 +144,8 @@ def start_file_frame():
 
     def choose_pic():
         file = askopenfilename(filetypes=[("PNG", ".png .jpg"), ("JPG", ".jpg")])
+        if not file:
+            return False
         file_loc.set("file selected" + file)
         global image_file, show_image
         image_file = Image.open(file)
@@ -150,25 +154,25 @@ def start_file_frame():
         if show_image.width > 1000 or show_image.height > 1000:
             while int(show_image.width/i) > 1000 or int(show_image.height/i) > 1000:
                 i += 1
-        print(i)
+        print(f"scale factor: {i}")
         show_image = ImageTk.PhotoImage(show_image.resize((int(show_image.width/i), int(show_image.height/i))))
         image_label = ttk.Label(file_frame, image=show_image)
         image_label.pack()
 
     def gen_preview():
-        file = asksaveasfilename()
-        print(file)
-        if "." not in file:
-            warn_label = ttk.Label(file_frame, text="save filename doesn't have a suffix")
-            warn_label.pack()
+        file = asksaveasfilename(defaultextension=".png", filetypes=[("generate result", "*.png")])
+        if not file:
             return False
+        print(file)
+        if ".png" != file[-4:]:
+            file += ".png"
         global image_file
-        for x in range(image_file.width):
+        for x in tqdm(range(image_file.width), desc="Processing image"):
             col = calculate_a_column(x, image_file.convert("RGB"))
             columns_data.append(col)
             for i in range(len(col)):
                 image_file.putpixel((x, i), col[i][0])
-            print(f"processed x pos:{x+1}/{image_file.width}")
+            # print(f"processed x pos:{x+1}/{image_file.width}")
         image_file.save(file)
         print("image processed and saved")
 
@@ -223,7 +227,7 @@ def start_run_frame():
         end_line = int(run_line_end_entry.get())
         rcon = RCONClient(rcon_host.get(), rcon_port.get())
         rcon.login(rcon_password.get())
-        for i in range(start_line, end_line+1):
+        for i in tqdm(range(start_line, end_line+1), desc="Setting blocks"):
             rcon.command(f"forceload add {start_x_pos+i} {start_y_pos} {start_x_pos+i} {start_y_pos+image_file.height}")
             handle_column(columns_data[i], i, (start_x_pos, start_y_pos), rcon)
             rcon.command(f"forceload remove {start_x_pos + i} {start_y_pos} {start_x_pos + i} "
